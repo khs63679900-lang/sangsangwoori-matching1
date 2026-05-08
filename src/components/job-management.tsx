@@ -156,58 +156,81 @@ function JobTable({
           <p className="text-xl text-gray-400">없음</p>
         </div>
       ) : (
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-5 py-4 text-base font-semibold">공고명</th>
-              <th className="px-5 py-4 text-base font-semibold">지역</th>
-              <th className="px-5 py-4 text-base font-semibold">직종</th>
-              <th className="px-5 py-4 text-base font-semibold">요구 경력</th>
-              <th className="px-5 py-4 text-base font-semibold">메모</th>
-              <th className="px-5 py-4" />
-            </tr>
-          </thead>
-          <tbody>
-            {jobs.map((job) => (
-              <tr key={job.id} className={`border-b border-gray-100 last:border-0 ${muted ? 'opacity-60' : ''}`}>
-                <td className="px-5 py-4 text-base font-medium">
-                  {job.title}
-                  {!job.is_active && (
-                    <span className="ml-2 text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">마감</span>
-                  )}
-                </td>
-                <td className="px-5 py-4 text-base">{job.region}</td>
-                <td className="px-5 py-4 text-base">{job.job_type}</td>
-                <td className="px-5 py-4 text-base">{job.required_career}년 이상</td>
-                <td className="px-5 py-4 text-sm text-gray-500 max-w-[200px] truncate">
-                  {job.memo ?? <span className="text-gray-300">—</span>}
-                </td>
-                <td className="px-5 py-4">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => onToggle(job.id, job.is_active)}
-                      disabled={isActing && actingId === job.id + ':toggle'}
-                      className={`h-10 px-4 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 ${
-                        job.is_active
-                          ? 'border border-orange-400 text-orange-600 hover:bg-orange-50'
-                          : 'border border-green-500 text-green-600 hover:bg-green-50'
-                      }`}
-                    >
-                      {actingId === job.id + ':toggle' ? '처리 중…' : job.is_active ? '마감' : '재활성화'}
-                    </button>
-                    <button
-                      onClick={() => onDelete(job.id)}
-                      disabled={isActing && actingId === job.id + ':del'}
-                      className="h-10 px-4 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors disabled:opacity-50"
-                    >
-                      {actingId === job.id + ':del' ? '삭제 중…' : '삭제'}
-                    </button>
-                  </div>
-                </td>
+        <>
+          {/* 데스크톱: 테이블 */}
+          <table className="hidden sm:table w-full text-left">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-5 py-4 text-base font-semibold">공고명</th>
+                <th className="px-5 py-4 text-base font-semibold">지역</th>
+                <th className="px-5 py-4 text-base font-semibold">직종</th>
+                <th className="px-5 py-4 text-base font-semibold">요구 경력</th>
+                <th className="px-5 py-4 text-base font-semibold">메모</th>
+                <th className="px-5 py-4" />
               </tr>
+            </thead>
+            <tbody>
+              {jobs.map((job) => (
+                <tr key={job.id} className={`border-b border-gray-100 last:border-0 ${muted ? 'opacity-60' : ''}`}>
+                  <td className="px-5 py-4 text-base font-medium">
+                    {job.title}
+                    {!job.is_active && <span className="ml-2 text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">마감</span>}
+                  </td>
+                  <td className="px-5 py-4 text-base">{job.region}</td>
+                  <td className="px-5 py-4 text-base">{job.job_type}</td>
+                  <td className="px-5 py-4 text-base">{job.required_career}년 이상</td>
+                  <td className="px-5 py-4 text-sm text-gray-500 max-w-[200px] truncate">
+                    {job.memo ?? <span className="text-gray-300">—</span>}
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex gap-2">
+                      <button onClick={() => onToggle(job.id, job.is_active)} disabled={isActing && actingId === job.id + ':toggle'}
+                        className={`h-10 px-4 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 ${job.is_active ? 'border border-orange-400 text-orange-600 hover:bg-orange-50' : 'border border-green-500 text-green-600 hover:bg-green-50'}`}>
+                        {actingId === job.id + ':toggle' ? '처리 중…' : job.is_active ? '마감' : '재활성화'}
+                      </button>
+                      <button onClick={() => onDelete(job.id)} disabled={isActing && actingId === job.id + ':del'}
+                        className="h-10 px-4 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors disabled:opacity-50">
+                        {actingId === job.id + ':del' ? '삭제 중…' : '삭제'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* 모바일: 카드 */}
+          <div className="sm:hidden flex flex-col divide-y divide-gray-100">
+            {jobs.map((job) => (
+              <div key={job.id} className={`p-4 ${muted ? 'opacity-60' : ''}`}>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <p className="text-base font-semibold">
+                      {job.title}
+                      {!job.is_active && <span className="ml-2 text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">마감</span>}
+                    </p>
+                    <div className="flex gap-2 flex-wrap mt-1">
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{job.region}</span>
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{job.job_type}</span>
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">경력 {job.required_career}년+</span>
+                    </div>
+                    {job.memo && <p className="text-xs text-gray-500 mt-1">{job.memo}</p>}
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button onClick={() => onToggle(job.id, job.is_active)} disabled={isActing && actingId === job.id + ':toggle'}
+                    className={`h-9 px-3 rounded-lg text-sm font-bold disabled:opacity-50 ${job.is_active ? 'border border-orange-400 text-orange-600' : 'border border-green-500 text-green-600'}`}>
+                    {actingId === job.id + ':toggle' ? '처리 중…' : job.is_active ? '마감' : '재활성화'}
+                  </button>
+                  <button onClick={() => onDelete(job.id)} disabled={isActing && actingId === job.id + ':del'}
+                    className="h-9 px-3 rounded-lg bg-red-600 text-white text-sm font-bold disabled:opacity-50">
+                    {actingId === job.id + ':del' ? '삭제 중…' : '삭제'}
+                  </button>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        </>
       )}
     </div>
   )

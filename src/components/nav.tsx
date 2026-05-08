@@ -8,15 +8,15 @@ const links = [
 
 export function Nav() {
   return (
-    <nav className="bg-gray-900 text-white px-6 py-4">
-      <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <span className="text-2xl font-bold tracking-tight">상상우리</span>
-        <ul className="flex flex-wrap gap-2 sm:ml-8">
+    <nav className="bg-gray-900 text-white px-4 py-3">
+      <div className="max-w-4xl mx-auto flex flex-row items-center justify-between gap-2">
+        <span className="text-xl font-bold tracking-tight shrink-0">상상우리</span>
+        <ul className="flex flex-wrap gap-1 justify-end">
           {links.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="text-lg px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                className="text-sm px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium whitespace-nowrap"
               >
                 {link.label}
               </Link>
