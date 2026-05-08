@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@supabase/supabase-js'
 import { AdminView, type SeniorRow } from '@/components/admin-view'
 import { seedSampleJobs } from '@/app/actions'
