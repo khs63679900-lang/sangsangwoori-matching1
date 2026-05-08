@@ -278,19 +278,20 @@ export function AdminView({
         <>
           {/* 데스크톱: 테이블 */}
           <div className="hidden sm:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <table className="w-full text-left">
+            <div className="overflow-x-auto">
+            <table className="min-w-full text-left">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-4 text-sm font-semibold">이름</th>
-                  <th className="px-4 py-4 text-sm font-semibold">연락처</th>
-                  <th className="px-4 py-4 text-sm font-semibold">지역</th>
-                  <th className="px-4 py-4 text-sm font-semibold">희망 직종</th>
-                  <th className="px-4 py-4 text-sm font-semibold">최고 점수</th>
-                  <th className="px-4 py-4 text-sm font-semibold">
+                  <th className="px-4 py-4 text-sm font-semibold whitespace-nowrap min-w-[80px]">이름</th>
+                  <th className="px-4 py-4 text-sm font-semibold whitespace-nowrap min-w-[120px]">연락처</th>
+                  <th className="px-4 py-4 text-sm font-semibold whitespace-nowrap min-w-[80px]">지역</th>
+                  <th className="px-4 py-4 text-sm font-semibold whitespace-nowrap min-w-[90px]">희망 직종</th>
+                  <th className="px-4 py-4 text-sm font-semibold whitespace-nowrap min-w-[80px]">최고 점수</th>
+                  <th className="px-4 py-4 text-sm font-semibold whitespace-nowrap min-w-[90px]">
                     {activeTab === 'assigned' ? '배정 공고' : '상태'}
                   </th>
-                  <th className="px-4 py-4 text-sm font-semibold">상세</th>
-                  <th className="px-4 py-4 text-sm font-semibold">수정</th>
+                  <th className="px-4 py-4 text-sm font-semibold whitespace-nowrap min-w-[60px]">상세</th>
+                  <th className="px-4 py-4 text-sm font-semibold whitespace-nowrap min-w-[60px]">수정</th>
                   <th className="px-4 py-4" />
                 </tr>
               </thead>
@@ -306,62 +307,62 @@ export function AdminView({
                   return (
                     <React.Fragment key={senior.id}>
                       <tr className={`border-b border-gray-100 ${senior.memo ? 'bg-yellow-50/30' : ''}`}>
-                        <td className="px-4 py-3 text-base font-semibold">
+                        <td className="px-4 py-3 text-base font-semibold whitespace-nowrap">
                           {senior.name}
                           {senior.memo && <span className="ml-1 text-xs text-yellow-600" title={senior.memo}>📝</span>}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">
+                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
                           {senior.phone ?? <span className="text-gray-300">—</span>}
                         </td>
-                        <td className="px-4 py-3 text-base">{senior.region}</td>
-                        <td className="px-4 py-3 text-base">{senior.desired_job}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-base whitespace-nowrap">{senior.region}</td>
+                        <td className="px-4 py-3 text-base whitespace-nowrap">{senior.desired_job}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
                           {topScore > 0
                             ? <span className={`text-base font-bold px-2 py-1 rounded-lg ${scoreBadgeClass(topScore)}`}>{topScore}점</span>
                             : <span className="text-sm text-gray-400">—</span>}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           {activeTab === 'assigned' ? (
                             <div>
-                              <p className="text-sm font-medium text-gray-800">{assignedMatch?.jobs.title ?? '—'}</p>
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${matchStatusBadge(assignedMatch?.status ?? '')}`}>
+                              <p className="text-sm font-medium text-gray-800 whitespace-nowrap">{assignedMatch?.jobs.title ?? '—'}</p>
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${matchStatusBadge(assignedMatch?.status ?? '')}`}>
                                 {matchStatusLabel(assignedMatch?.status ?? '')}
                               </span>
                             </div>
                           ) : (
-                            <span className={`text-sm font-medium px-2 py-1 rounded-full ${activeTab === 'unmatched' ? 'bg-gray-100 text-gray-500' : matchStatusBadge(topStatus)}`}>
+                            <span className={`text-sm font-medium px-2 py-1 rounded-full whitespace-nowrap ${activeTab === 'unmatched' ? 'bg-gray-100 text-gray-500' : matchStatusBadge(topStatus)}`}>
                               {activeTab === 'unmatched' ? '미매칭' : matchStatusLabel(topStatus)}
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <Link href={`/recommendations?senior_id=${senior.id}`}
                             className="inline-flex h-9 items-center px-3 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-900 transition-colors">
                             상세
                           </Link>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <button onClick={() => openPanel(senior.id, 'edit')}
                             className={`h-9 px-3 rounded-lg text-sm font-semibold transition-colors border ${isExpanded && panelType === 'edit' ? 'bg-yellow-100 border-yellow-400 text-yellow-800' : 'border-gray-300 text-gray-700 hover:border-gray-900'}`}>
                             수정
                           </button>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex gap-2">
                             {activeTab === 'pending' && (
                               <button onClick={() => openPanel(senior.id, 'assign')}
-                                className={`h-9 px-3 rounded-lg text-sm font-semibold transition-colors ${isExpanded && panelType === 'assign' ? 'bg-gray-700 text-white' : 'bg-gray-900 text-white hover:bg-gray-700'}`}>
+                                className={`h-9 px-3 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${isExpanded && panelType === 'assign' ? 'bg-gray-700 text-white' : 'bg-gray-900 text-white hover:bg-gray-700'}`}>
                                 {isExpanded && panelType === 'assign' ? '닫기 ▲' : '공고 선택 ▼'}
                               </button>
                             )}
                             {activeTab === 'assigned' && assignedMatch?.status === 'assigned' && (
                               <>
                                 <button onClick={() => handleComplete(assignedMatch.id)} disabled={isPending}
-                                  className="h-9 px-3 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50">
+                                  className="h-9 px-3 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 whitespace-nowrap">
                                   {actionId === assignedMatch.id ? '처리 중…' : '취업 완료'}
                                 </button>
                                 <button onClick={() => handleUnassign(assignedMatch.id)} disabled={isPending}
-                                  className="h-9 px-3 rounded-lg border border-orange-400 text-orange-600 text-sm font-semibold hover:bg-orange-50 transition-colors disabled:opacity-50">
+                                  className="h-9 px-3 rounded-lg border border-orange-400 text-orange-600 text-sm font-semibold hover:bg-orange-50 transition-colors disabled:opacity-50 whitespace-nowrap">
                                   {actionId === assignedMatch.id ? '처리 중…' : '배정 취소'}
                                 </button>
                               </>
@@ -405,6 +406,7 @@ export function AdminView({
                 })}
               </tbody>
             </table>
+            </div>
           </div>
 
           {/* 모바일: 카드 */}
