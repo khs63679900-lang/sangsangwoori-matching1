@@ -292,7 +292,7 @@ export function AdminView({
                   </th>
                   <th className="px-4 py-4 text-sm font-semibold whitespace-nowrap min-w-[60px]">상세</th>
                   <th className="px-4 py-4 text-sm font-semibold whitespace-nowrap min-w-[60px]">수정</th>
-                  <th className="px-4 py-4" />
+                  <th className="px-4 py-4 min-w-[130px]" />
                 </tr>
               </thead>
               <tbody>
@@ -347,7 +347,7 @@ export function AdminView({
                             수정
                           </button>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap min-w-[130px]">
                           <div className="flex gap-2">
                             {activeTab === 'pending' && (
                               <button onClick={() => openPanel(senior.id, 'assign')}

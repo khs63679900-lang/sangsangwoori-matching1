@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko" className={`${geist.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-gray-50 text-gray-900 text-lg">
         <Nav />
-        <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-10">{children}</main>
+        <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-10">{children}</main>
       </body>
     </html>
   )
