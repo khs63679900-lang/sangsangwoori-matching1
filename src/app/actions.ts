@@ -1,10 +1,15 @@
 'use server'
 
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 
 export type ProfileFormState = { success?: boolean; seniorId?: string; errors?: Record<string, string> }
+export type DeleteSeniorState = { success?: boolean }
 export type JobFormState = { success?: boolean; errors?: Record<string, string> }
+export type LoginState = { error: string }
+export type UpdateSeniorState = { success?: boolean; errors?: Record<string, string> }
 
 type SeniorData = { id: string; region: string; desired_job: string; career_years: number }
 type JobData = { id: string; region: string; job_type: string; required_career: number }
@@ -16,7 +21,26 @@ function getClient() {
   )
 }
 
-// 비교용 정규화 테이블 (원본 데이터 수정 없음)
+// ── 인증 ────────────────────────────────────────────────────────────────────
+
+export async function adminLogin(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const password = String(formData.get('password') ?? '')
+  if (password !== process.env.ADMIN_PASSWORD) {
+    return { error: '비밀번호가 올바르지 않습니다.' }
+  }
+  const jar = await cookies()
+  jar.set('admin_session', password, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 })
+  redirect('/admin')
+}
+
+export async function adminLogout() {
+  const jar = await cookies()
+  jar.delete('admin_session')
+  redirect('/admin/login')
+}
+
+// ── 매칭 점수 계산 ──────────────────────────────────────────────────────────
+
 const REGION_NORM: Record<string, string> = {
   '서울특별시': '서울',
   '경기도':     '경기',
@@ -32,97 +56,62 @@ function norm(v: string, map: Record<string, string>): string {
   return map[v] ?? v
 }
 
-// 지역 일치 +3 / 직종 일치 +2 / 경력 충족 +1 (최대 6점)
-// 트리거 대신 앱 레이어에서 재계산
 function calcScore(
   senior: { region: string; desired_job: string; career_years: number },
   job: { region: string; job_type: string; required_career: number },
-  label?: string
 ): number {
-  const sRegion = norm(senior.region,      REGION_NORM)
-  const jRegion = norm(job.region,         REGION_NORM)
-  const sJob    = norm(senior.desired_job, JOB_NORM)
-  const jJob    = norm(job.job_type,       JOB_NORM)
-
-  const regionMatch = sRegion === jRegion
-  const jobMatch    = sJob    === jJob
+  const regionMatch = norm(senior.region, REGION_NORM) === norm(job.region, REGION_NORM)
+  const jobMatch    = norm(senior.desired_job, JOB_NORM) === norm(job.job_type, JOB_NORM)
   const careerMatch = senior.career_years >= job.required_career
-
-  const score = (regionMatch ? 3 : 0) + (jobMatch ? 2 : 0) + (careerMatch ? 1 : 0)
-
-  const sRegionLabel = sRegion !== senior.region ? `${senior.region}→${sRegion}` : senior.region
-  const jRegionLabel = jRegion !== job.region   ? `${job.region}→${jRegion}`   : job.region
-  const sJobLabel    = sJob    !== senior.desired_job ? `${senior.desired_job}→${sJob}` : senior.desired_job
-  const jJobLabel    = jJob    !== job.job_type       ? `${job.job_type}→${jJob}`       : job.job_type
-
-  console.log(
-    `[매칭] ${label ?? ''}` +
-    `\n  시니어: 지역=${sRegionLabel}, 직종=${sJobLabel}, 경력=${senior.career_years}년` +
-    `\n  일자리: 지역=${jRegionLabel}, 직종=${jJobLabel}, 요구경력=${job.required_career}년` +
-    `\n  지역 일치(+3): ${regionMatch ? '✓' : '✗'}  직종 일치(+2): ${jobMatch ? '✓' : '✗'}  경력 충족(+1): ${careerMatch ? '✓' : '✗'}` +
-    `\n  → 최종 점수: ${score}점`
-  )
-
-  return score
+  return (regionMatch ? 3 : 0) + (jobMatch ? 2 : 0) + (careerMatch ? 1 : 0)
 }
 
-async function rematchSenior(db: SupabaseClient, senior: SeniorData & { name?: string }) {
+async function rematchSenior(db: SupabaseClient, senior: SeniorData) {
   await db.from('matches').delete().eq('senior_id', senior.id)
-  const { data: jobs } = await db.from('jobs').select('*')
-  if (!jobs?.length) { console.log('[매칭] 등록된 일자리 없음 — 매칭 생략'); return }
+  const { data: jobs } = await db.from('jobs').select('*').eq('is_active', true)
+  if (!jobs?.length) return
 
-  console.log(`\n=== 시니어 재매칭 시작: ${senior.name ?? senior.id} ===`)
-  const rows = (jobs as (JobData & { title?: string })[])
-    .map((job) => ({
-      senior_id: senior.id,
-      job_id: job.id,
-      score: calcScore(senior, job, `vs [${job.title ?? job.id}]`),
-      status: 'pending',
-    }))
+  const rows = (jobs as JobData[])
+    .map((job) => ({ senior_id: senior.id, job_id: job.id, score: calcScore(senior, job), status: 'pending' }))
     .filter((r) => r.score > 0)
-  console.log(`=== 저장될 매칭: ${rows.length}건 (0점 제외) ===\n`)
-
   if (rows.length > 0) await db.from('matches').insert(rows)
 }
 
-async function rematchJob(db: SupabaseClient, job: JobData & { title?: string }) {
+async function rematchJob(db: SupabaseClient, job: JobData) {
   await db.from('matches').delete().eq('job_id', job.id)
   const { data: seniors } = await db.from('seniors').select('*')
-  if (!seniors?.length) { console.log('[매칭] 등록된 시니어 없음 — 매칭 생략'); return }
+  if (!seniors?.length) return
 
-  console.log(`\n=== 일자리 재매칭 시작: ${job.title ?? job.id} ===`)
-  const rows = (seniors as (SeniorData & { name?: string })[])
-    .map((s) => ({
-      senior_id: s.id,
-      job_id: job.id,
-      score: calcScore(s, job, `[${s.name ?? s.id}] vs`),
-      status: 'pending',
-    }))
+  const rows = (seniors as SeniorData[])
+    .map((s) => ({ senior_id: s.id, job_id: job.id, score: calcScore(s, job), status: 'pending' }))
     .filter((r) => r.score > 0)
-  console.log(`=== 저장될 매칭: ${rows.length}건 (0점 제외) ===\n`)
-
   if (rows.length > 0) await db.from('matches').insert(rows)
 }
+
+// ── 시니어 ──────────────────────────────────────────────────────────────────
 
 export async function saveSeniorProfile(
   _prev: ProfileFormState,
   formData: FormData
 ): Promise<ProfileFormState> {
-  const name = String(formData.get('name') ?? '').trim()
-  const region = String(formData.get('region') ?? '').trim()
-  const desired_job = String(formData.get('desired_job') ?? '').trim()
+  const name         = String(formData.get('name')         ?? '').trim()
+  const region       = String(formData.get('region')       ?? '').trim()
+  const desired_job  = String(formData.get('desired_job')  ?? '').trim()
   const career_years = parseInt(String(formData.get('career_years') ?? '0'), 10)
+  const salaryRaw    = parseInt(String(formData.get('desired_salary') ?? '0'), 10)
+  const desired_salary = salaryRaw > 0 ? salaryRaw : null
+  const phone        = String(formData.get('phone')        ?? '').trim() || null
 
   const errors: Record<string, string> = {}
-  if (!name) errors.name = '이름을 입력해 주세요.'
-  if (!region) errors.region = '지역을 선택해 주세요.'
+  if (!name)        errors.name        = '이름을 입력해 주세요.'
+  if (!region)      errors.region      = '지역을 선택해 주세요.'
   if (!desired_job) errors.desired_job = '희망 직종을 선택해 주세요.'
   if (Object.keys(errors).length > 0) return { errors }
 
   const db = getClient()
   const { data: senior, error } = await db
     .from('seniors')
-    .insert({ name, region, desired_job, career_years })
+    .insert({ name, region, desired_job, career_years, desired_salary, phone })
     .select()
     .single()
   if (error || !senior) return { errors: { _form: error?.message ?? '저장에 실패했습니다.' } }
@@ -132,25 +121,87 @@ export async function saveSeniorProfile(
   return { success: true, seniorId: senior.id }
 }
 
+export async function updateSenior(
+  _prev: UpdateSeniorState,
+  formData: FormData
+): Promise<UpdateSeniorState> {
+  const id           = String(formData.get('id')           ?? '').trim()
+  const name         = String(formData.get('name')         ?? '').trim()
+  const region       = String(formData.get('region')       ?? '').trim()
+  const desired_job  = String(formData.get('desired_job')  ?? '').trim()
+  const career_years = parseInt(String(formData.get('career_years') ?? '0'), 10)
+  const salaryRaw    = parseInt(String(formData.get('desired_salary') ?? '0'), 10)
+  const desired_salary = salaryRaw > 0 ? salaryRaw : null
+  const phone        = String(formData.get('phone')        ?? '').trim() || null
+  const memo         = String(formData.get('memo')         ?? '').trim() || null
+
+  const errors: Record<string, string> = {}
+  if (!name)        errors.name        = '이름을 입력해 주세요.'
+  if (!region)      errors.region      = '지역을 선택해 주세요.'
+  if (!desired_job) errors.desired_job = '희망 직종을 선택해 주세요.'
+  if (Object.keys(errors).length > 0) return { errors }
+
+  const db = getClient()
+  const { error } = await db
+    .from('seniors')
+    .update({ name, region, desired_job, career_years, desired_salary, phone, memo })
+    .eq('id', id)
+  if (error) return { errors: { _form: error.message } }
+
+  await rematchSenior(db, { id, region, desired_job, career_years })
+  revalidatePath('/admin')
+  return { success: true }
+}
+
+export async function deleteSenior(seniorId: string) {
+  const db = getClient()
+  await db.from('matches').delete().eq('senior_id', seniorId)
+  await db.from('seniors').delete().eq('id', seniorId)
+  revalidatePath('/admin')
+}
+
+// ── 매칭 ────────────────────────────────────────────────────────────────────
+
+export async function assignMatch(matchId: string) {
+  const db = getClient()
+  await db.from('matches').update({ status: 'assigned' }).eq('id', matchId)
+  revalidatePath('/admin')
+}
+
+export async function unassignMatch(matchId: string) {
+  const db = getClient()
+  await db.from('matches').update({ status: 'pending' }).eq('id', matchId)
+  revalidatePath('/admin')
+}
+
+export async function completeMatch(matchId: string) {
+  const db = getClient()
+  await db.from('matches').update({ status: 'done' }).eq('id', matchId)
+  revalidatePath('/admin')
+}
+
+// ── 일자리 ──────────────────────────────────────────────────────────────────
+
 export async function addJob(
   _prev: JobFormState,
   formData: FormData
 ): Promise<JobFormState> {
-  const title = String(formData.get('title') ?? '').trim()
-  const region = String(formData.get('region') ?? '').trim()
-  const job_type = String(formData.get('job_type') ?? '').trim()
+  const title           = String(formData.get('title')           ?? '').trim()
+  const region          = String(formData.get('region')          ?? '').trim()
+  const job_type        = String(formData.get('job_type')        ?? '').trim()
   const required_career = parseInt(String(formData.get('required_career') ?? '0'), 10)
+  const memo            = String(formData.get('memo')            ?? '').trim() || null
 
   const errors: Record<string, string> = {}
-  if (!title) errors.title = '공고명을 입력해 주세요.'
-  if (!region) errors.region = '지역을 선택해 주세요.'
+  if (!title)    errors.title    = '공고명을 입력해 주세요.'
+  if (!region)   errors.region   = '지역을 선택해 주세요.'
   if (!job_type) errors.job_type = '직종을 선택해 주세요.'
   if (Object.keys(errors).length > 0) return { errors }
 
   const db = getClient()
   const { data: job, error } = await db
     .from('jobs')
-    .insert({ title, region, job_type, required_career })
+    .insert({ title, region, job_type, required_career, memo, is_active: true })
     .select()
     .single()
   if (error || !job) return { errors: { _form: error?.message ?? '저장에 실패했습니다.' } }
@@ -160,9 +211,15 @@ export async function addJob(
   return { success: true }
 }
 
-export async function assignMatch(matchId: string) {
+export async function toggleJobActive(jobId: string, currentActive: boolean) {
   const db = getClient()
-  await db.from('matches').update({ status: 'assigned' }).eq('id', matchId)
+  await db.from('jobs').update({ is_active: !currentActive }).eq('id', jobId)
+  if (!currentActive) {
+    const { data: job } = await db.from('jobs').select('*').eq('id', jobId).single()
+    if (job) await rematchJob(db, job as JobData)
+  } else {
+    await db.from('matches').delete().eq('job_id', jobId).eq('status', 'pending')
+  }
   revalidatePath('/admin')
 }
 
@@ -179,12 +236,12 @@ export async function seedSampleJobs() {
   if ((count ?? 0) > 0) return
 
   const sampleJobs = [
-    { title: '강남 아파트 경비원', region: '서울', job_type: '경비', required_career: 0 },
+    { title: '강남 아파트 경비원',    region: '서울', job_type: '경비', required_career: 0 },
     { title: '서울 요양원 돌봄 보조', region: '서울', job_type: '돌봄', required_career: 1 },
-    { title: '수원 아파트 경비원', region: '경기', job_type: '경비', required_career: 0 },
+    { title: '수원 아파트 경비원',    region: '경기', job_type: '경비', required_career: 0 },
     { title: '경기 노인 돌봄 서비스', region: '경기', job_type: '돌봄', required_career: 2 },
-    { title: '인천 병원 조리 보조', region: '인천', job_type: '조리', required_career: 1 },
-    { title: '인천 물류센터 청소', region: '인천', job_type: '청소', required_career: 0 },
+    { title: '인천 병원 조리 보조',   region: '인천', job_type: '조리', required_career: 1 },
+    { title: '인천 물류센터 청소',    region: '인천', job_type: '청소', required_career: 0 },
   ]
 
   for (const jobData of sampleJobs) {

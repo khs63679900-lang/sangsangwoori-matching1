@@ -79,6 +79,7 @@ export default async function RecommendationsPage({
       </h1>
       <p className="text-lg text-gray-500 mb-8">
         {senior.region} · {senior.desired_job} · 경력 {senior.career_years}년
+        {senior.desired_salary ? ` · 희망 급여 ${senior.desired_salary}만원` : ''}
       </p>
 
       {matches.length === 0 ? (

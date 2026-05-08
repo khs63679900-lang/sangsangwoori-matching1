@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@supabase/supabase-js'
 import { AdminView, type SeniorRow } from '@/components/admin-view'
 import { JobManagement } from '@/components/job-management'
-import { seedSampleJobs } from '@/app/actions'
+import { seedSampleJobs, adminLogout } from '@/app/actions'
 
 function getClient() {
   return createClient(
@@ -22,7 +22,6 @@ export default async function AdminPage() {
   ])
   const jobCount = jobs?.length ?? 0
 
-  // senior_id별 매칭 목록 인덱싱
   const matchMap = new Map<string, typeof allMatches>()
   allMatches?.forEach((m) => {
     if (!matchMap.has(m.senior_id)) matchMap.set(m.senior_id, [])
@@ -35,8 +34,8 @@ export default async function AdminPage() {
   })
 
   const unmatched: SeniorRow[] = []
-  const pending: SeniorRow[] = []
-  const assigned: SeniorRow[] = []
+  const pending: SeniorRow[]   = []
+  const assigned: SeniorRow[]  = []
 
   seniors?.forEach((s) => {
     const matches = matchMap.get(s.id) ?? []
@@ -53,16 +52,26 @@ export default async function AdminPage() {
     <div>
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold">담당자 대시보드</h1>
-        {jobCount === 0 && (
-          <form action={seedSampleJobs}>
+        <div className="flex items-center gap-3">
+          {jobCount === 0 && (
+            <form action={seedSampleJobs}>
+              <button
+                type="submit"
+                className="h-10 px-4 rounded-lg border border-dashed border-gray-400 text-sm text-gray-500 hover:border-gray-700 hover:text-gray-900 transition-colors"
+              >
+                샘플 일자리 6개 등록
+              </button>
+            </form>
+          )}
+          <form action={adminLogout}>
             <button
               type="submit"
-              className="h-10 px-4 rounded-lg border border-dashed border-gray-400 text-sm text-gray-500 hover:border-gray-700 hover:text-gray-900 transition-colors"
+              className="h-10 px-4 rounded-lg border border-gray-300 text-sm text-gray-500 hover:border-gray-700 hover:text-gray-900 transition-colors"
             >
-              샘플 일자리 6개 등록
+              로그아웃
             </button>
           </form>
-        )}
+        </div>
       </div>
       <p className="text-lg text-gray-500 mb-8">
         매칭 현황을 한눈에 확인하고 관리합니다.

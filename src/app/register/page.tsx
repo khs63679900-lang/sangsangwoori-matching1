@@ -134,6 +134,33 @@ export default function RegisterPage() {
           />
         </div>
 
+        {/* 희망 급여 */}
+        <div className="flex flex-col gap-1">
+          <p className="text-gray-500">희망하는 월 급여를 적어 주세요 (없으면 0)</p>
+          <label htmlFor="desired_salary" className="text-xl font-bold">희망 급여 (만원)</label>
+          <input
+            id="desired_salary"
+            name="desired_salary"
+            type="number"
+            min="0"
+            defaultValue="0"
+            className="h-14 rounded-xl border-2 border-gray-300 px-4 text-xl focus:outline-none focus:border-gray-900"
+          />
+        </div>
+
+        {/* 연락처 */}
+        <div className="flex flex-col gap-1">
+          <p className="text-gray-500">담당자가 연락할 수 있는 전화번호</p>
+          <label htmlFor="phone" className="text-xl font-bold">연락처</label>
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            placeholder="010-0000-0000"
+            className="h-14 rounded-xl border-2 border-gray-300 px-4 text-xl focus:outline-none focus:border-gray-900"
+          />
+        </div>
+
         <button
           type="submit"
           disabled={isPending}
