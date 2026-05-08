@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { AlertTriangle, Clock, CheckCircle2 } from 'lucide-react'
 import { assignMatch } from '@/app/actions'
 
 type Job = { id: string; title: string; region: string; job_type: string; required_career: number }
@@ -11,10 +12,10 @@ export type SeniorRow = { senior: Senior; matches: Match[] }
 
 type Tab = 'unmatched' | 'pending' | 'assigned'
 
-const TABS: { id: Tab; label: string; emptyMsg: string }[] = [
-  { id: 'unmatched', label: '미매칭', emptyMsg: '미매칭 시니어가 없습니다.' },
-  { id: 'pending', label: '매칭 대기', emptyMsg: '매칭 대기 중인 시니어가 없습니다.' },
-  { id: 'assigned', label: '배정 완료', emptyMsg: '배정 완료된 시니어가 없습니다.' },
+const TABS: { id: Tab; label: string; emptyMsg: string; icon: React.ReactNode }[] = [
+  { id: 'unmatched', label: '미매칭',   emptyMsg: '미매칭 시니어가 없습니다.',        icon: <AlertTriangle className="size-7 mx-auto mb-2" /> },
+  { id: 'pending',   label: '매칭 대기', emptyMsg: '매칭 대기 중인 시니어가 없습니다.', icon: <Clock         className="size-7 mx-auto mb-2" /> },
+  { id: 'assigned',  label: '배정 완료', emptyMsg: '배정 완료된 시니어가 없습니다.',    icon: <CheckCircle2  className="size-7 mx-auto mb-2" /> },
 ]
 
 const CARD_STYLE: Record<Tab, string> = {
@@ -81,9 +82,10 @@ export function AdminView({
                 : 'bg-white border-gray-200 hover:border-gray-400'
             }`}
           >
-            <p className="text-base font-semibold mb-1">{tab.label}</p>
+            {tab.icon}
+            <p className="text-lg font-semibold mb-1">{tab.label}</p>
             <p className="text-4xl font-bold">{counts[tab.id]}</p>
-            <p className="text-sm opacity-60 mt-1">명</p>
+            <p className="text-base opacity-60 mt-1">명</p>
           </button>
         ))}
       </div>
@@ -140,7 +142,7 @@ export function AdminView({
                     <td className="px-5 py-4">
                       <Link
                         href={`/recommendations?senior_id=${senior.id}`}
-                        className="inline-flex h-10 items-center px-4 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-700 hover:text-gray-900 transition-colors"
+                        className="inline-flex h-12 items-center px-5 rounded-xl border-2 border-gray-300 text-base font-semibold text-gray-700 hover:border-gray-900 hover:text-gray-900 transition-colors"
                       >
                         상세 보기
                       </Link>
@@ -151,7 +153,7 @@ export function AdminView({
                           <button
                             onClick={() => handleAssign(topMatch.id)}
                             disabled={isPending}
-                            className="h-10 px-5 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="h-12 px-5 rounded-xl bg-gray-900 text-white text-base font-semibold hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {isAssigning ? '처리 중…' : '배정하기'}
                           </button>

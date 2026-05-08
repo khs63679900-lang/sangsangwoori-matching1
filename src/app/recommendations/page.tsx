@@ -16,6 +16,12 @@ function scoreBadgeClass(score: number): string {
   return 'bg-gray-100 text-gray-500'
 }
 
+function scoreMeaningLabel(score: number): string {
+  if (score === 6) return '매우 적합'
+  if (score >= 4) return '적합'
+  return '보통'
+}
+
 function statusLabel(status: string): string {
   if (status === 'assigned') return '배정 완료'
   if (status === 'done') return '완료'
@@ -68,17 +74,20 @@ export default async function RecommendationsPage({
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-1">매칭 추천 목록</h1>
+      <h1 className="text-4xl font-bold mb-2">
+        {senior.name} 님께 맞는 일자리
+      </h1>
       <p className="text-lg text-gray-500 mb-8">
-        <span className="font-semibold text-gray-900">{senior.name}</span>님 (
-        {senior.region} · {senior.desired_job} · 경력 {senior.career_years}년)께 추천드리는 일자리입니다.
+        {senior.region} · {senior.desired_job} · 경력 {senior.career_years}년
       </p>
 
       {matches.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-          <p className="text-xl text-gray-400 mb-3">현재 매칭되는 일자리가 없습니다.</p>
-          <p className="text-base text-gray-400">
-            담당자가 일자리를 등록하면 자동으로 매칭됩니다.
+        <div className="py-16 bg-white rounded-2xl border border-gray-200 text-center px-8">
+          <p className="text-2xl font-semibold text-gray-700 mb-3">
+            현재 매칭되는 일자리가 없습니다.
+          </p>
+          <p className="text-lg text-gray-500">
+            담당자가 직접 연락드리니 잠시만 기다려 주세요.
           </p>
         </div>
       ) : (
@@ -89,16 +98,19 @@ export default async function RecommendationsPage({
               className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex items-center justify-between gap-4"
             >
               <div className="flex flex-col gap-1 min-w-0">
-                <span className="text-xl font-semibold truncate">{match.jobs.title}</span>
-                <span className="text-base text-gray-500">
+                <span className="text-xl font-bold truncate">{match.jobs.title}</span>
+                <span className="text-lg text-gray-600">
                   {match.jobs.region} · {match.jobs.job_type}
                 </span>
-                <span className="text-sm text-gray-400">최소 경력 {match.jobs.required_career}년</span>
+                <span className="text-base text-gray-400">최소 경력 {match.jobs.required_career}년</span>
               </div>
 
               <div className="flex flex-col items-end gap-2 shrink-0">
                 <span className={`text-3xl font-bold px-4 py-1 rounded-xl ${scoreBadgeClass(match.score)}`}>
                   {match.score}점
+                </span>
+                <span className="text-base font-semibold text-gray-600">
+                  {scoreMeaningLabel(match.score)}
                 </span>
                 <span className={`text-sm font-medium px-3 py-1 rounded-full ${statusBadgeClass(match.status)}`}>
                   {statusLabel(match.status)}
@@ -109,8 +121,8 @@ export default async function RecommendationsPage({
         </div>
       )}
 
-      <div className="mt-8 text-center">
-        <Link href="/register" className="text-base text-gray-400 underline">
+      <div className="mt-10 text-center">
+        <Link href="/register" className="text-lg text-gray-400 underline">
           다른 프로필 등록하기
         </Link>
       </div>

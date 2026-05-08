@@ -19,7 +19,9 @@ export default function RegisterPage() {
       <div className="max-w-xl mx-auto">
         <div className="bg-green-50 border-2 border-green-500 rounded-2xl p-10 text-center">
           <p className="text-3xl font-bold text-green-700 mb-3">등록이 완료되었습니다</p>
-          <p className="text-lg text-green-600 mb-8">매칭 점수가 계산되었습니다. 추천 일자리를 확인해 보세요.</p>
+          <p className="text-xl text-green-700 mb-8">
+            담당자가 곧 연락드립니다.
+          </p>
           <Link
             href={`/recommendations?senior_id=${state.seniorId}`}
             className="inline-block h-14 px-8 rounded-xl bg-gray-900 text-white text-xl font-bold leading-[3.5rem] hover:bg-gray-700 transition-colors"
@@ -33,14 +35,14 @@ export default function RegisterPage() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">시니어 프로필 등록</h1>
+      <h1 className="text-4xl font-bold mb-2">시니어 일자리 신청하기</h1>
       <p className="text-lg text-gray-500 mb-8">
-        기본 정보를 입력하시면 일자리를 추천해 드립니다.
+        아래 정보를 입력하시면 맞는 일자리를 찾아 드립니다.
       </p>
 
       <form
         action={formAction}
-        className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 flex flex-col gap-6"
+        className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 flex flex-col gap-7"
       >
         {state.errors?._form && (
           <div className="bg-red-50 border border-red-400 rounded-xl px-4 py-3">
@@ -49,8 +51,9 @@ export default function RegisterPage() {
         )}
 
         {/* 이름 */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="name" className="text-xl font-semibold">
+        <div className="flex flex-col gap-1">
+          <p className="text-gray-500">성함을 적어 주세요</p>
+          <label htmlFor="name" className="text-xl font-bold">
             이름 <span className="text-red-500">*</span>
           </label>
           {state.errors?.name && (
@@ -63,13 +66,14 @@ export default function RegisterPage() {
             name="name"
             type="text"
             placeholder="홍길동"
-            className="h-14 rounded-xl border border-gray-300 px-4 text-xl focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="h-14 rounded-xl border-2 border-gray-300 px-4 text-xl focus:outline-none focus:border-gray-900"
           />
         </div>
 
         {/* 지역 */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="region" className="text-xl font-semibold">
+        <div className="flex flex-col gap-1">
+          <p className="text-gray-500">어디에서 일하고 싶으세요?</p>
+          <label htmlFor="region" className="text-xl font-bold">
             지역 <span className="text-red-500">*</span>
           </label>
           {state.errors?.region && (
@@ -82,7 +86,7 @@ export default function RegisterPage() {
             name="region"
             value={region}
             onChange={(e) => setRegion(e.target.value)}
-            className="h-14 rounded-xl border border-gray-300 px-4 text-xl bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="h-14 rounded-xl border-2 border-gray-300 px-4 text-xl bg-white focus:outline-none focus:border-gray-900"
           >
             <option value="">지역을 선택하세요</option>
             {REGIONS.map((r) => (
@@ -92,8 +96,9 @@ export default function RegisterPage() {
         </div>
 
         {/* 희망 직종 */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="desired_job" className="text-xl font-semibold">
+        <div className="flex flex-col gap-1">
+          <p className="text-gray-500">어떤 일을 하시겠어요?</p>
+          <label htmlFor="desired_job" className="text-xl font-bold">
             희망 직종 <span className="text-red-500">*</span>
           </label>
           {state.errors?.desired_job && (
@@ -106,7 +111,7 @@ export default function RegisterPage() {
             name="desired_job"
             value={desiredJob}
             onChange={(e) => setDesiredJob(e.target.value)}
-            className="h-14 rounded-xl border border-gray-300 px-4 text-xl bg-white focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="h-14 rounded-xl border-2 border-gray-300 px-4 text-xl bg-white focus:outline-none focus:border-gray-900"
           >
             <option value="">직종을 선택하세요</option>
             {JOB_TYPES.map((j) => (
@@ -116,15 +121,16 @@ export default function RegisterPage() {
         </div>
 
         {/* 경력 */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="career_years" className="text-xl font-semibold">경력 (년)</label>
+        <div className="flex flex-col gap-1">
+          <p className="text-gray-500">경력이 얼마나 되세요? (없으면 0)</p>
+          <label htmlFor="career_years" className="text-xl font-bold">경력 (년)</label>
           <input
             id="career_years"
             name="career_years"
             type="number"
             min="0"
             defaultValue="0"
-            className="h-14 rounded-xl border border-gray-300 px-4 text-xl focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="h-14 rounded-xl border-2 border-gray-300 px-4 text-xl focus:outline-none focus:border-gray-900"
           />
         </div>
 
