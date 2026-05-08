@@ -16,6 +16,22 @@ function getClient() {
   )
 }
 
+// 비교용 정규화 테이블 (원본 데이터 수정 없음)
+const REGION_NORM: Record<string, string> = {
+  '서울특별시': '서울',
+  '경기도':     '경기',
+  '인천광역시': '인천',
+}
+const JOB_NORM: Record<string, string> = {
+  '경비직': '경비',
+  '청소직': '청소',
+  '조리직': '조리',
+  '돌봄직': '돌봄',
+}
+function norm(v: string, map: Record<string, string>): string {
+  return map[v] ?? v
+}
+
 // 지역 일치 +3 / 직종 일치 +2 / 경력 충족 +1 (최대 6점)
 // 트리거 대신 앱 레이어에서 재계산
 function calcScore(
@@ -23,16 +39,26 @@ function calcScore(
   job: { region: string; job_type: string; required_career: number },
   label?: string
 ): number {
-  const regionMatch = senior.region === job.region
-  const jobMatch = senior.desired_job === job.job_type
+  const sRegion = norm(senior.region,      REGION_NORM)
+  const jRegion = norm(job.region,         REGION_NORM)
+  const sJob    = norm(senior.desired_job, JOB_NORM)
+  const jJob    = norm(job.job_type,       JOB_NORM)
+
+  const regionMatch = sRegion === jRegion
+  const jobMatch    = sJob    === jJob
   const careerMatch = senior.career_years >= job.required_career
 
   const score = (regionMatch ? 3 : 0) + (jobMatch ? 2 : 0) + (careerMatch ? 1 : 0)
 
+  const sRegionLabel = sRegion !== senior.region ? `${senior.region}→${sRegion}` : senior.region
+  const jRegionLabel = jRegion !== job.region   ? `${job.region}→${jRegion}`   : job.region
+  const sJobLabel    = sJob    !== senior.desired_job ? `${senior.desired_job}→${sJob}` : senior.desired_job
+  const jJobLabel    = jJob    !== job.job_type       ? `${job.job_type}→${jJob}`       : job.job_type
+
   console.log(
     `[매칭] ${label ?? ''}` +
-    `\n  시니어: 지역=${senior.region}, 직종=${senior.desired_job}, 경력=${senior.career_years}년` +
-    `\n  일자리: 지역=${job.region}, 직종=${job.job_type}, 요구경력=${job.required_career}년` +
+    `\n  시니어: 지역=${sRegionLabel}, 직종=${sJobLabel}, 경력=${senior.career_years}년` +
+    `\n  일자리: 지역=${jRegionLabel}, 직종=${jJobLabel}, 요구경력=${job.required_career}년` +
     `\n  지역 일치(+3): ${regionMatch ? '✓' : '✗'}  직종 일치(+2): ${jobMatch ? '✓' : '✗'}  경력 충족(+1): ${careerMatch ? '✓' : '✗'}` +
     `\n  → 최종 점수: ${score}점`
   )
