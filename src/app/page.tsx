@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export default function Home() {
   return (
@@ -7,12 +8,12 @@ export default function Home() {
       <h1 className="text-4xl font-bold">상상우리</h1>
       <p className="text-xl text-gray-600">시니어와 일자리를 자동으로 연결합니다</p>
       <div className="flex flex-col sm:flex-row gap-4">
-        <Button asChild size="lg" className="text-lg h-14 px-8">
-          <Link href="/register">프로필 등록하기</Link>
-        </Button>
-        <Button asChild size="lg" variant="outline" className="text-lg h-14 px-8">
-          <Link href="/admin">담당자 대시보드</Link>
-        </Button>
+        <Link href="/register" className={cn(buttonVariants({ size: "lg" }), "text-lg h-14 px-8")}>
+          프로필 등록하기
+        </Link>
+        <Link href="/admin" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "text-lg h-14 px-8")}>
+          담당자 대시보드
+        </Link>
       </div>
     </div>
   )
