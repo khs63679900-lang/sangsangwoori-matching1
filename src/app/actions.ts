@@ -109,11 +109,15 @@ export async function saveSeniorProfile(
   if (Object.keys(errors).length > 0) return { errors }
 
   const db = getClient()
-  const { data: senior, error } = await db
-    .from('seniors')
-    .insert({ name, region, desired_job, career_years, desired_salary, phone })
-    .select()
-    .single()
+  const { data, error } = await db.rpc('insert_senior', {
+    p_name:           name,
+    p_region:         region,
+    p_desired_job:    desired_job,
+    p_career_years:   career_years,
+    p_desired_salary: desired_salary ?? 0,
+    p_phone:          phone ?? '',
+  })
+  const senior = Array.isArray(data) ? data[0] : data
   if (error || !senior) return { errors: { _form: error?.message ?? '저장에 실패했습니다.' } }
 
   await rematchSenior(db, senior as SeniorData)
@@ -142,10 +146,16 @@ export async function updateSenior(
   if (Object.keys(errors).length > 0) return { errors }
 
   const db = getClient()
-  const { error } = await db
-    .from('seniors')
-    .update({ name, region, desired_job, career_years, desired_salary, phone, memo })
-    .eq('id', id)
+  const { error } = await db.rpc('update_senior', {
+    p_id:             id,
+    p_name:           name,
+    p_region:         region,
+    p_desired_job:    desired_job,
+    p_career_years:   career_years,
+    p_desired_salary: desired_salary ?? 0,
+    p_phone:          phone ?? '',
+    p_memo:           memo ?? '',
+  })
   if (error) return { errors: { _form: error.message } }
 
   await rematchSenior(db, { id, region, desired_job, career_years })
