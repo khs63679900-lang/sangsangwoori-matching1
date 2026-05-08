@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { assignMatch } from '@/app/actions'
 
 type Job = { id: string; title: string; region: string; job_type: string; required_career: number }
@@ -16,16 +17,29 @@ const TABS: { id: Tab; label: string; emptyMsg: string }[] = [
   { id: 'assigned', label: '배정 완료', emptyMsg: '배정 완료된 시니어가 없습니다.' },
 ]
 
-const STATUS_BADGE: Record<Tab, string> = {
+const CARD_STYLE: Record<Tab, string> = {
   unmatched: 'bg-gray-100 text-gray-500',
   pending: 'bg-blue-100 text-blue-700',
   assigned: 'bg-green-100 text-green-700',
 }
 
-const STATUS_LABEL: Record<Tab, string> = {
-  unmatched: '미매칭',
-  pending: '매칭 대기',
-  assigned: '배정 완료',
+function matchStatusBadge(status: string) {
+  if (status === 'assigned') return 'bg-green-100 text-green-700'
+  if (status === 'done') return 'bg-emerald-100 text-emerald-700'
+  return 'bg-blue-100 text-blue-700'
+}
+
+function matchStatusLabel(status: string) {
+  if (status === 'assigned') return '배정 완료'
+  if (status === 'done') return '완료'
+  return '매칭 대기'
+}
+
+function scoreBadgeClass(score: number): string {
+  if (score === 6) return 'bg-amber-100 text-amber-700'
+  if (score >= 4) return 'bg-green-100 text-green-700'
+  if (score >= 2) return 'bg-gray-100 text-gray-500'
+  return 'bg-gray-50 text-gray-400'
 }
 
 export function AdminView({
@@ -55,7 +69,7 @@ export function AdminView({
 
   return (
     <>
-      {/* 요약 카드 — 클릭하면 탭 전환 */}
+      {/* 요약 카드 */}
       <div className="grid grid-cols-3 gap-4 mb-10">
         {TABS.map((tab) => (
           <button
@@ -74,7 +88,7 @@ export function AdminView({
         ))}
       </div>
 
-      {/* 테이블 */}
+      {/* 시니어 목록 테이블 */}
       {rows.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
           <p className="text-xl text-gray-400">{emptyMsg}</p>
@@ -84,41 +98,52 @@ export function AdminView({
           <table className="w-full text-left">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-5 py-4 text-base font-semibold">시니어</th>
-                <th className="px-5 py-4 text-base font-semibold">지역 · 희망직종</th>
-                <th className="px-5 py-4 text-base font-semibold">추천 일자리</th>
-                <th className="px-5 py-4 text-base font-semibold">점수</th>
+                <th className="px-5 py-4 text-base font-semibold">이름</th>
+                <th className="px-5 py-4 text-base font-semibold">지역</th>
+                <th className="px-5 py-4 text-base font-semibold">희망 직종</th>
+                <th className="px-5 py-4 text-base font-semibold">최고 점수</th>
                 <th className="px-5 py-4 text-base font-semibold">상태</th>
+                <th className="px-5 py-4 text-base font-semibold">상세 보기</th>
                 {activeTab === 'pending' && <th className="px-5 py-4" />}
               </tr>
             </thead>
             <tbody>
               {rows.map(({ senior, matches }) => {
                 const topMatch = matches[0]
+                const topScore = topMatch?.score ?? 0
                 const isAssigning = topMatch && assigningId === topMatch.id
+                const topStatus = topMatch?.status ?? 'pending'
 
                 return (
                   <tr key={senior.id} className="border-b border-gray-100 last:border-0">
                     <td className="px-5 py-4 text-base font-semibold">{senior.name}</td>
-                    <td className="px-5 py-4 text-sm text-gray-500">
-                      {senior.region}<br />{senior.desired_job} · {senior.career_years}년
-                    </td>
-                    <td className="px-5 py-4 text-base">
-                      {topMatch ? (
-                        <>
-                          <span className="font-medium">{topMatch.jobs.title}</span>
-                          <br />
-                          <span className="text-sm text-gray-400">{topMatch.jobs.region}</span>
-                        </>
-                      ) : '—'}
-                    </td>
-                    <td className="px-5 py-4 text-xl font-bold">
-                      {topMatch ? `${topMatch.score}점` : '—'}
+                    <td className="px-5 py-4 text-base">{senior.region}</td>
+                    <td className="px-5 py-4 text-base">{senior.desired_job}</td>
+                    <td className="px-5 py-4">
+                      {topScore > 0 ? (
+                        <span className={`text-lg font-bold px-3 py-1 rounded-lg ${scoreBadgeClass(topScore)}`}>
+                          {topScore}점
+                        </span>
+                      ) : (
+                        <span className="text-base text-gray-400">—</span>
+                      )}
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`text-sm font-medium px-3 py-1 rounded-full ${STATUS_BADGE[activeTab]}`}>
-                        {STATUS_LABEL[activeTab]}
+                      <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                        activeTab === 'unmatched'
+                          ? 'bg-gray-100 text-gray-500'
+                          : matchStatusBadge(topStatus)
+                      }`}>
+                        {activeTab === 'unmatched' ? '미매칭' : matchStatusLabel(topStatus)}
                       </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <Link
+                        href={`/recommendations?senior_id=${senior.id}`}
+                        className="inline-flex h-10 items-center px-4 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-700 hover:text-gray-900 transition-colors"
+                      >
+                        상세 보기
+                      </Link>
                     </td>
                     {activeTab === 'pending' && (
                       <td className="px-5 py-4">

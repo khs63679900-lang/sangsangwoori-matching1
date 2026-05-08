@@ -42,6 +42,8 @@ next-env.d.ts
 
 # playwright artifacts
 .playwright-mcp/
+/test-results/
+/playwright-report/
 
 # screenshots
 *.png
@@ -51,3 +53,5 @@ next-env.d.ts
 # claude
 CLAUDE.md
 AGENTS.md
+
+.vercel

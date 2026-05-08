@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@supabase/supabase-js'
 import { AdminView, type SeniorRow } from '@/components/admin-view'
+import { JobManagement } from '@/components/job-management'
 import { seedSampleJobs } from '@/app/actions'
 
 function getClient() {
@@ -14,11 +15,12 @@ function getClient() {
 export default async function AdminPage() {
   const db = getClient()
 
-  const [{ data: seniors }, { data: allMatches }, { count: jobCount }] = await Promise.all([
+  const [{ data: seniors }, { data: allMatches }, { data: jobs }] = await Promise.all([
     db.from('seniors').select('*').order('created_at', { ascending: false }),
     db.from('matches').select('*, jobs(*)').order('score', { ascending: false }),
-    db.from('jobs').select('*', { count: 'exact', head: true }),
+    db.from('jobs').select('*').order('created_at', { ascending: false }),
   ])
+  const jobCount = jobs?.length ?? 0
 
   // senior_id별 매칭 목록 인덱싱
   const matchMap = new Map<string, typeof allMatches>()
@@ -40,7 +42,7 @@ export default async function AdminPage() {
     const matches = matchMap.get(s.id) ?? []
     if (matches.length === 0) {
       unmatched.push(buildRow(s))
-    } else if (matches.some((m) => m.status === 'assigned')) {
+    } else if (matches.some((m) => m.status === 'assigned' || m.status === 'done')) {
       assigned.push(buildRow(s))
     } else {
       pending.push(buildRow(s))
@@ -51,7 +53,7 @@ export default async function AdminPage() {
     <div>
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold">담당자 대시보드</h1>
-        {(jobCount ?? 0) === 0 && (
+        {jobCount === 0 && (
           <form action={seedSampleJobs}>
             <button
               type="submit"
@@ -64,12 +66,13 @@ export default async function AdminPage() {
       </div>
       <p className="text-lg text-gray-500 mb-8">
         매칭 현황을 한눈에 확인하고 관리합니다.
-        {(jobCount ?? 0) === 0 && (
+        {jobCount === 0 && (
           <span className="ml-2 text-amber-600 font-medium">⚠ 일자리 데이터가 없습니다. 위 버튼으로 샘플을 등록하세요.</span>
         )}
       </p>
 
       <AdminView unmatched={unmatched} pending={pending} assigned={assigned} />
+      <JobManagement jobs={jobs ?? []} />
     </div>
   )
 }

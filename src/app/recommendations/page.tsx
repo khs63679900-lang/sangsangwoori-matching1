@@ -10,10 +10,21 @@ function getClient() {
   )
 }
 
-function scoreBadgeClass(score: number) {
-  if (score >= 70) return 'bg-green-100 text-green-700'
-  if (score >= 40) return 'bg-yellow-100 text-yellow-700'
-  return 'bg-orange-100 text-orange-700'
+function scoreBadgeClass(score: number): string {
+  if (score === 6) return 'bg-amber-100 text-amber-700 ring-1 ring-amber-400'
+  if (score >= 4) return 'bg-green-100 text-green-700'
+  return 'bg-gray-100 text-gray-500'
+}
+
+function statusLabel(status: string): string {
+  if (status === 'assigned') return '배정 완료'
+  if (status === 'done') return '완료'
+  return '매칭 대기'
+}
+
+function statusBadgeClass(status: string): string {
+  if (status === 'assigned' || status === 'done') return 'bg-green-100 text-green-700'
+  return 'bg-blue-100 text-blue-700'
 }
 
 export default async function RecommendationsPage({
@@ -35,7 +46,7 @@ export default async function RecommendationsPage({
   }
 
   const db = getClient()
-  const [{ data: senior }, { data: matches }] = await Promise.all([
+  const [{ data: senior }, { data: rawMatches }] = await Promise.all([
     db.from('seniors').select('*').eq('id', senior_id).single(),
     db
       .from('matches')
@@ -53,6 +64,8 @@ export default async function RecommendationsPage({
     )
   }
 
+  const matches = (rawMatches ?? []).filter((m) => m.score > 0)
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-1">매칭 추천 목록</h1>
@@ -61,11 +74,11 @@ export default async function RecommendationsPage({
         {senior.region} · {senior.desired_job} · 경력 {senior.career_years}년)께 추천드리는 일자리입니다.
       </p>
 
-      {!matches || matches.length === 0 ? (
+      {matches.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-          <p className="text-xl text-gray-400 mb-3">매칭되는 일자리가 없습니다.</p>
+          <p className="text-xl text-gray-400 mb-3">현재 매칭되는 일자리가 없습니다.</p>
           <p className="text-base text-gray-400">
-            담당자에게 문의하거나, 담당자가 일자리 데이터를 먼저 등록해야 합니다.
+            담당자가 일자리를 등록하면 자동으로 매칭됩니다.
           </p>
         </div>
       ) : (
@@ -84,17 +97,11 @@ export default async function RecommendationsPage({
               </div>
 
               <div className="flex flex-col items-end gap-2 shrink-0">
-                <span className={`text-3xl font-bold px-3 py-1 rounded-xl ${scoreBadgeClass(match.score)}`}>
+                <span className={`text-3xl font-bold px-4 py-1 rounded-xl ${scoreBadgeClass(match.score)}`}>
                   {match.score}점
                 </span>
-                <span
-                  className={`text-sm font-medium px-3 py-1 rounded-full ${
-                    match.status === 'assigned'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-blue-100 text-blue-700'
-                  }`}
-                >
-                  {match.status === 'assigned' ? '배정 완료' : '매칭 대기'}
+                <span className={`text-sm font-medium px-3 py-1 rounded-full ${statusBadgeClass(match.status)}`}>
+                  {statusLabel(match.status)}
                 </span>
               </div>
             </div>
